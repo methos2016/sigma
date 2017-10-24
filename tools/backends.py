@@ -154,6 +154,14 @@ class QuoteCharMixin:
             val = self.reClear.sub("", val)
         return val
 
+class PrefixSuffixMixin:
+    """Puts content from properties prefix and suffix around generated query"""
+    prefix = ""
+    suffix = ""
+
+    def generateQuery(self, parsed):
+        return self.prefix + super().generateQuery(parsed) + self.suffix
+
 class SingleTextQueryBackend(BaseBackend, QuoteCharMixin):
     """Base class for backends that generate one text-based expression from a Sigma rule"""
     identifier = "base-textquery"
@@ -482,6 +490,25 @@ class SplunkBackend(SingleTextQueryBackend):
             return " | stats %s(%s) as val | search val %s %s" % (agg.aggfunc_notrans, agg.aggfield, agg.cond_op, agg.condition)
         else:
             return " | stats %s(%s) as val by %s | search val %s %s" % (agg.aggfunc_notrans, agg.aggfield, agg.groupfield, agg.cond_op, agg.condition)
+
+class QRadarBackend(PrefixSuffixMixin, SingleTextQueryBackend):
+    """Converts Sigma rule into QRadar query"""
+    identifier = "qradar"
+    active = True
+
+    prefix = "SELECT * FROM events WHERE "
+    reEscape = re.compile('(["\\\\%])')
+    reClear = None
+    andToken = " AND "
+    orToken = " OR "
+    notToken = "NOT "
+    subExpression = "(%s)"
+    listExpression = "(%s)"
+    listSeparator = " "
+    valueExpression = "\"%s\""
+    mapExpression = "%s=%s"
+    mapListsSpecialHandling = True
+    mapListValueExpression = "%s IN %s"
 
 class GrepBackend(BaseBackend, QuoteCharMixin):
     """Generates Perl compatible regular expressions and puts 'grep -P' around it"""

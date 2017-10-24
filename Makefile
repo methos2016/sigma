@@ -12,6 +12,7 @@ test-sigmac:
 	coverage run -a --include=tools/* tools/sigmac.py -rvdI -t xpack-watcher rules/ > /dev/null
 	coverage run -a --include=tools/* tools/sigmac.py -rvdI -t splunk rules/ > /dev/null
 	coverage run -a --include=tools/* tools/sigmac.py -rvdI -t logpoint rules/ > /dev/null
+	coverage run -a --include=tools/* tools/sigmac.py -rvdI -t qradar rules/ > /dev/null
 	coverage run -a --include=tools/* tools/sigmac.py -rvdI -c tools/config/elk-windows.yml -t es-qs rules/ > /dev/null
 	coverage run -a --include=tools/* tools/sigmac.py -rvdI -c tools/config/elk-linux.yml -t es-qs rules/ > /dev/null
 	coverage run -a --include=tools/* tools/sigmac.py -rvdI -c tools/config/elk-windows.yml -t kibana rules/ > /dev/null
