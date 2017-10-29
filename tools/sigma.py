@@ -7,6 +7,7 @@ COND_NONE = 0
 COND_AND  = 1
 COND_OR   = 2
 COND_NOT  = 3
+COND_NULL = 4
 
 class SigmaParser:
     def __init__(self, sigma, config):
@@ -68,7 +69,20 @@ class SigmaParser:
             cond = ConditionAND()
             for key, value in definition.items():
                 mapping = self.config.get_fieldmapping(key)
-                cond.add(mapping.resolve(key, value, self))
+                if value == None:
+                    fields = mapping.resolve_fieldname(key)
+                    if type(fields) == str:
+                        fields = [ fields ]
+                    for field in fields:
+                        cond.add(ConditionNULLValue(val=field))
+                elif value == "not null":
+                    fields = mapping.resolve_fieldname(key)
+                    if type(fields) == str:
+                        fields = [ fields ]
+                    for field in fields:
+                        cond.add(ConditionNotNULLValue(val=field))
+                else:
+                    cond.add(mapping.resolve(key, value, self))
 
         return cond
 
@@ -129,7 +143,6 @@ class SigmaConditionToken:
     TOKEN_GTE    = 15
     TOKEN_BY     = 16
     TOKEN_NEAR   = 17
-    TOKEN_WITHIN = 18
 
     tokenstr = [
             "INVALID",
@@ -150,7 +163,6 @@ class SigmaConditionToken:
             "GTE",
             "BY",
             "NEAR",
-            "WITHIN",
             ]
 
     def __init__(self, tokendef, match, pos):
@@ -177,7 +189,6 @@ class SigmaConditionTokenizer:
             (None,       re.compile("[\\s\\r\\n]+")),
             (SigmaConditionToken.TOKEN_AGG,    re.compile("count|min|max|avg|sum", re.IGNORECASE)),
             (SigmaConditionToken.TOKEN_NEAR,   re.compile("near", re.IGNORECASE)),
-            (SigmaConditionToken.TOKEN_WITHIN, re.compile("within", re.IGNORECASE)),
             (SigmaConditionToken.TOKEN_BY,     re.compile("by", re.IGNORECASE)),
             (SigmaConditionToken.TOKEN_EQ,     re.compile("==")),
             (SigmaConditionToken.TOKEN_LT,     re.compile("<")),
@@ -299,7 +310,7 @@ class ConditionNOT(ConditionBase):
         if len(self.items) == 0:
             super.add(item)
         else:
-            raise ValueError("Only one element allowed in NOT condition")
+            raise ValueError("Only one element allowed")
 
     @property
     def item(self):
@@ -307,6 +318,14 @@ class ConditionNOT(ConditionBase):
             return self.items[0]
         except IndexError:
             return None
+
+class ConditionNULLValue(ConditionNOT):
+    """Condition: Field value is empty or doesn't exists"""
+    pass
+
+class ConditionNotNULLValue(ConditionNULLValue):
+    """Condition: Field value is not empty"""
+    pass
 
 class NodeSubexpression(ParseTreeNode):
     """Subexpression"""
@@ -515,17 +534,13 @@ class SigmaAggregationParser(SimpleParser):
             },
             {   # State 9
                 SigmaConditionToken.TOKEN_AND: (None, "set_include", 10),
-                SigmaConditionToken.TOKEN_WITHIN: (None, None, 11),
             },
             {   # State 10
                 SigmaConditionToken.TOKEN_NOT: (None, "set_exclude", 8),
                 SigmaConditionToken.TOKEN_ID: (None, "store_search_id", 9),
             },
-            {   # State 11
-                SigmaConditionToken.TOKEN_ID: ("timeframe", "trans_timeframe", -1),
-            },
             ]
-    finalstates = { -1 }
+    finalstates = { -1, 9 }
 
     # Aggregation functions
     AGGFUNC_COUNT = 1
