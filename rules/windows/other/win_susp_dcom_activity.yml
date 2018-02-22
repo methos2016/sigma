@@ -1,0 +1,23 @@
+title: Suspicious Instantiation of a Remote DCOM Object
+status: experimental
+description: Detects suspicious instantiation of a remote DCOM object. Adversaries may use DCOM for lateral movement. Does not detect instantiation of objects that are hosted by an already existing process (e.g. explorer.exe).
+author: Dominik Schaudel
+references:
+    - https://attack.mitre.org/wiki/Technique/T1175
+    - https://www.cybereason.com/blog/dcom-lateral-movement-techniques
+logsource:
+    product: windows
+detection:
+    selection1:
+        EventID: 1
+        ParentCommandLine: "C:\\Windows\\System32\\svchost.exe -k DcomLaunch*"
+        CommandLine: "C:\\Program Files (x86)\\Microsoft Office\\Office*\\*-Embedding"
+    selection2:
+        EventID: 4674
+        PrivilegeList: "SeTakeOwnershipPrivilege"
+        ObjectName: "\\REGISTRY\\MACHINE\\SYSTEM\\*\\services\\WinSock2\\Parameters"
+    condition: selection1 | near selection2
+falsepositives:
+    - unknown
+level: high
+response: Correlate w/ 4624 and 4674 events by LogonId for further triage. Walk the process chain.
