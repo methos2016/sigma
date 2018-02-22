@@ -11,7 +11,11 @@ detection:
     selection1:
         EventID: 1
         ParentCommandLine: "C:\\Windows\\System32\\svchost.exe -k DcomLaunch*"
-        CommandLine: "C:\\Program Files (x86)\\Microsoft Office\\Office*\\*-Embedding"
+        CommandLine: 
+            - "*-Embedding"
+        Image:
+            - "C:\\Windows\\System32\\mmc.exe"
+            - "C:\\Program Files (x86)\\Microsoft Office\\Office*\\*.EXE"
     selection2:
         EventID: 4674
         PrivilegeList: "SeTakeOwnershipPrivilege"
