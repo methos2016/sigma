@@ -20,4 +20,4 @@ detection:
 falsepositives:
     - unknown
 level: high
-response: Correlate w/ 4624 and 4674 events by LogonId for further triage. Walk the process chain.
+response: Correlate w/ 4624 and 4672 events by LogonId for further triage. Walk the process chain.
